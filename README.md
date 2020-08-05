@@ -4,6 +4,8 @@ Scroll Across SliceS (SASS)
 ### What is it?
 If you have a stack of images as a 3D volume and need to scroll through them, `SASS` is for you.
 
+![img](sass_mask.png)
+
 ### Why?
 Because I could not find an easy-to-use and lightweight tool to view slices in a 3D image volume.
 
