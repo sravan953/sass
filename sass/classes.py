@@ -1,3 +1,5 @@
+from typing import Sequence
+
 import numpy as np
 
 
@@ -7,43 +9,38 @@ class SASS:
 
     Methods
     ==========
-    onscroll : self, event
+    onscroll(self, event)
          Mouse scroll listener, updates self.ind.
-    update : self
+    update(self)
         Update method that redraws the display.
     """
 
-    def __init__(self, alpha, ax, cmap, fig, volumes, scroll_dim: int = None):
+    def __init__(self, alpha: Sequence, ax: Sequence, cmap: Sequence, fig, volumes: Sequence, flag_mask: bool = False,
+                 scroll_dim: int = None):
         self.fig = fig
-        flag_mask = False  # Boolean flag to identify calling method (scroll/scroll_mask)
+        self.flag_mask = flag_mask  # Boolean flag to identify calling method (scroll/scroll_mask)
 
         # Move scrolling dimension to the last
-        if scroll_dim > len(volumes[0].shape):
-            raise ValueError('Invalid scroll_dim')
         volumes = [np.swapaxes(vol, scroll_dim, 2) for vol in volumes]
-        volumes = [vol.astype(np.float64) for vol in volumes]
         self.arr_volumes = volumes
 
-        # Convert ax to a tuple
-        if not isinstance(ax, np.ndarray):  # scroll_mask is the calling method
-            ax = (ax,) * len(self.arr_volumes)
-            flag_mask = True
-        self.arr_ax = ax
+        # Prepare ax
+        self.arr_ax = ax.flatten() if isinstance(ax, np.ndarray) else (ax,) * len(self.arr_volumes)
 
         _, _, self.slices = volumes[0].shape  # Number of slices
         self.ind = self.slices // 2  # Center slice
 
-        # Prepare colour map
-        self.arr_cmap = (cmap,) * len(self.arr_volumes) if not isinstance(cmap, (list, tuple)) else cmap
-
-        # Prepare alpha
-        self.alpha = (1,) * len(self.arr_volumes) if not isinstance(alpha, (list, tuple)) else alpha
+        self.arr_alpha = alpha
+        self.arr_cmap = cmap
 
         # Plot
         self.im = []
         for i in range(len(self.arr_volumes)):
-            _im = self.arr_ax[i].imshow(self.arr_volumes[i][:, :, self.ind], cmap=self.arr_cmap[i], alpha=self.alpha[i])
-            if flag_mask and i == 1:  # If mask is overlaid: plot colorbar
+            _alpha = self.arr_alpha[i]
+            if isinstance(_alpha, np.ndarray):
+                _alpha = _alpha[:, :, self.ind]
+            _im = self.arr_ax[i].imshow(self.arr_volumes[i][:, :, self.ind], cmap=self.arr_cmap[i], alpha=_alpha)
+            if self.flag_mask and i == 1 and not isinstance(_alpha, np.ndarray):  # If mask is overlaid: plot colorbar
                 self.fig.colorbar(_im, ax=self.arr_ax[i])
             self.im.append(_im)
         self.update()
