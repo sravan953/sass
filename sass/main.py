@@ -6,7 +6,7 @@ import numpy as np
 from sass.classes import SASS
 
 
-def scroll(*volumes: np.ndarray, cmap: List[str] = ('gray',), scroll_dim: int = 2):
+def scroll(*volumes: np.ndarray, labels: List[List[str]] = (), cmap: List[str] = ('gray',), scroll_dim: int = 2):
     """
     Scroll through slices in up to 4 3D volumes simultaneously.
 
@@ -18,6 +18,7 @@ def scroll(*volumes: np.ndarray, cmap: List[str] = ('gray',), scroll_dim: int = 
         Upto `volumes` number of `str` values describing the colormaps. See Matplotlib documentation for valid values.
     scroll_dim : int
         Dimension to scroll through. Default is 2 for a volume structured as `rows x columns x slices`.
+    :param labels:
     """
     # Check volumes
     if len(volumes) > 4:  # Check number of volumes passed
@@ -32,11 +33,20 @@ def scroll(*volumes: np.ndarray, cmap: List[str] = ('gray',), scroll_dim: int = 
         raise TypeError(f'cmap must be a list[str, ...] or a tuple[str, ...]. You passed {type(cmap)}')
     elif len(cmap) > len(volumes):  # cmap > volumes
         raise TypeError(f'Upto {len(volumes)} strings can be passed for cmap. You passed {len(cmap)}')
-    elif len(cmap) != len(volumes):
-        if len(cmap) > 1:  # cmap > 1 but not as many as volumes
-            raise TypeError(f'cmap must have a single value, or as many as volumes. You passed {len(cmap)}')
-        _len = len(volumes) - len(cmap)
-        cmap = cmap * _len
+    elif len(cmap) == 1 and len(volumes) != 1:
+        cmap = cmap * len(volumes)
+    elif len(cmap) > 1 and len(cmap) != len(volumes):
+        raise TypeError(f'cmap must have a single value, or as many as volumes. You passed {len(cmap)}')
+
+    # Check labels
+    if not isinstance(labels, (list, tuple)):  # labels was neither a list nor a tuple
+        raise TypeError(f'labels must be a list[str, ...] or a tuple[str, ...]. You passed {type(labels)}')
+    elif len(labels) > len(volumes):  # labels > volumes
+        raise TypeError(f'Upto {len(volumes)} strings can be passed for labels. You passed {len(labels)}')
+    elif len(labels) == 1 and len(volumes) != 1:
+        labels = labels * len(volumes)
+    elif len(labels) > 1 and len(labels) != len(labels):
+        raise TypeError(f'labels must have a single value, or as many as volumes. You passed {len(cmap)}')
 
     # Check scrolling dimension
     if scroll_dim > len(volumes[0].shape):
@@ -47,7 +57,7 @@ def scroll(*volumes: np.ndarray, cmap: List[str] = ('gray',), scroll_dim: int = 
     nrows = 2 if len(volumes) / 2 > 1 else 1  # Number of rows of subplots
     ncols = 2 if len(volumes) % 2 == 0 else 1  # Number of columns of subplots
     fig, ax = plt.subplots(nrows, ncols)
-    tracker = SASS(alpha=alpha, ax=ax, cmap=cmap, fig=fig, scroll_dim=scroll_dim, volumes=volumes)
+    tracker = SASS(alpha=alpha, ax=ax, cmap=cmap, fig=fig, labels=labels, scroll_dim=scroll_dim, volumes=volumes)
     fig.canvas.mpl_connect('scroll_event', tracker.onscroll)
     plt.show()
 

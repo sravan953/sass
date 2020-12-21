@@ -15,10 +15,11 @@ class SASS:
         Update method that redraws the display.
     """
 
-    def __init__(self, alpha: Sequence, ax: Sequence, cmap: Sequence, fig, volumes: Sequence, flag_mask: bool = False,
-                 scroll_dim: int = None):
+    def __init__(self, alpha: Sequence, ax: Sequence, cmap: Sequence, labels: list, fig, volumes: Sequence,
+                 flag_mask: bool = False, scroll_dim: int = None):
         self.fig = fig
         self.flag_mask = flag_mask  # Boolean flag to identify calling method (scroll/scroll_mask)
+        self.labels = labels
 
         # Move scrolling dimension to the last
         volumes = [np.swapaxes(vol, scroll_dim, 2) for vol in volumes]
@@ -56,4 +57,7 @@ class SASS:
         for i in range(len(self.arr_volumes)):
             self.im[i].set_data(self.arr_volumes[i][:, :, self.ind])
             self.im[i].axes.figure.canvas.draw()
-        self.fig.suptitle(f'Use scroll wheel to scroll through slices\nSlice {self.ind}')
+        text = f'Use scroll wheel to scroll through slices\nSlice {self.ind}'
+        if len(self.labels) != 0:
+            text += ' | ' + self.labels[i][self.ind]
+        self.fig.suptitle(text)
