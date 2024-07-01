@@ -22,14 +22,14 @@ class SASS:
         self.labels = labels
 
         # Move scrolling dimension to the last
-        volumes = [np.swapaxes(vol, scroll_dim, 2) for vol in volumes]
+        volumes = [np.moveaxis(vol, scroll_dim, 2) for vol in volumes]
         self.arr_volumes = volumes
 
         # Prepare ax
         self.arr_ax = ax.flatten() if isinstance(ax, np.ndarray) else (ax,) * len(self.arr_volumes)
 
         _, _, self.slices = volumes[0].shape  # Number of slices
-        self.ind = self.slices // 2  # Center slice
+        self.ind = int(self.slices / 2)  # Center slice
 
         self.arr_alpha = alpha
         self.arr_cmap = cmap
@@ -49,7 +49,7 @@ class SASS:
     def onscroll(self, event):
         if event.button == 'up':
             self.ind = (self.ind + 1) % self.slices
-        else:
+        elif event.button == 'down':
             self.ind = (self.ind - 1) % self.slices
         self.update()
 
@@ -57,7 +57,8 @@ class SASS:
         for i in range(len(self.arr_volumes)):
             self.im[i].set_data(self.arr_volumes[i][:, :, self.ind])
             self.im[i].axes.figure.canvas.draw()
-        text = f'Use scroll wheel to scroll through slices\nSlice {self.ind}'
-        if len(self.labels) != 0:
-            text += ' | ' + self.labels[i][self.ind]
+
+            if len(self.labels) != 0:
+                self.im[i].axes.set_title(self.labels[i][self.ind])
+        text = f'Use scroll wheel to scroll through slices\nSlice {self.ind + 1}'
         self.fig.suptitle(text)

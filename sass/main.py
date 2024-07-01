@@ -6,7 +6,7 @@ import numpy as np
 from sass.classes import SASS
 
 
-def scroll(*volumes: np.ndarray, labels: List[List[str]] = (), cmap: List[str] = ('gray',), scroll_dim: int = 2):
+def scroll(*volumes: np.ndarray, labels: List[str] = (), cmap: List[str] = ('gray',), scroll_dim: int = 2):
     """
     Scroll through slices in up to 4 3D volumes simultaneously.
 
@@ -30,7 +30,7 @@ def scroll(*volumes: np.ndarray, labels: List[List[str]] = (), cmap: List[str] =
 
     # Check cmap
     if not isinstance(cmap, (list, tuple)):  # cmap was neither a list nor a tuple
-        raise TypeError(f'cmap must be a list[str, ...] or a tuple[str, ...]. You passed {type(cmap)}')
+        raise TypeError(f'cmap must be a list[str, ...] or similar. You passed {type(cmap)}')
     elif len(cmap) > len(volumes):  # cmap > volumes
         raise TypeError(f'Upto {len(volumes)} strings can be passed for cmap. You passed {len(cmap)}')
     elif len(cmap) == 1 and len(volumes) != 1:
@@ -40,13 +40,11 @@ def scroll(*volumes: np.ndarray, labels: List[List[str]] = (), cmap: List[str] =
 
     # Check labels
     if not isinstance(labels, (list, tuple)):  # labels was neither a list nor a tuple
-        raise TypeError(f'labels must be a list[str, ...] or a tuple[str, ...]. You passed {type(labels)}')
+        raise TypeError(f'labels must be a list[str, ...] or similar. You passed {type(labels)}')
     elif len(labels) > len(volumes):  # labels > volumes
-        raise TypeError(f'Upto {len(volumes)} strings can be passed for labels. You passed {len(labels)}')
+        raise TypeError(f'{len(volumes)} strings can be passed for labels. You passed {len(labels)}')
     elif len(labels) == 1 and len(volumes) != 1:
         labels = labels * len(volumes)
-    elif len(labels) > 1 and len(labels) != len(labels):
-        raise TypeError(f'labels must have a single value, or as many as volumes. You passed {len(cmap)}')
 
     # Check scrolling dimension
     if scroll_dim > len(volumes[0].shape):
@@ -54,16 +52,16 @@ def scroll(*volumes: np.ndarray, labels: List[List[str]] = (), cmap: List[str] =
 
     alpha = [1] * len(volumes)  # Prepare alpha
 
-    nrows = 2 if len(volumes) / 2 > 1 else 1  # Number of rows of subplots
-    ncols = 2 if len(volumes) % 2 == 0 else 1  # Number of columns of subplots
-    fig, ax = plt.subplots(nrows, ncols)
+    dict_nrows_ncols = {1: (1, 1), 2: (1, 2), 3: (1, 3), 4: (2, 2)}
+    nrows, ncols = dict_nrows_ncols[len(volumes)]  # Number of rows and columsn of subplots
+    fig, ax = plt.subplots(nrows, ncols, sharex=True, sharey=True)
     tracker = SASS(alpha=alpha, ax=ax, cmap=cmap, fig=fig, labels=labels, scroll_dim=scroll_dim, volumes=volumes)
     fig.canvas.mpl_connect('scroll_event', tracker.onscroll)
     plt.show()
 
 
 def scroll_mask(volume: np.ndarray, mask: np.ndarray, alpha: Union[int, float, np.ndarray] = 0.15,
-                cmap: List[str] = ('gray', 'jet'), scroll_dim: int = 2):
+                cmap: List[str] = ('gray', 'jet'), labels: List[str] = (), scroll_dim: int = 2):
     """
     Display a volume and overlay a mask of configurable opacity (see `alpha`). Scroll through slices simultaneously.
 
@@ -107,7 +105,15 @@ def scroll_mask(volume: np.ndarray, mask: np.ndarray, alpha: Union[int, float, n
     if isinstance(cmap, (list, tuple)) and len(cmap) > 2:  # Check if a maximum of two cmaps were passed
         raise ValueError(f'scroll_mask accepts upto 2 strings for cmap. You passed {len(cmap)}')
     elif not isinstance(cmap, (list, tuple, str)):
-        raise TypeError(f'cmap must be a list[str, ...] or a tuple[str, ...]. You passed {type(cmap)}')
+        raise TypeError(f'cmap must be a list[str, ...] or similar. You passed {type(cmap)}')
+
+    # Check labels
+    if not isinstance(labels, (list, tuple)):  # labels was neither a list nor a tuple
+        raise TypeError(f'labels must be a list[str, ...] or similar. You passed {type(labels)}')
+    elif len(labels) > 2:  # labels > 2
+        raise TypeError(f'2 strings can be passed for labels. You passed {len(labels)}')
+    elif len(labels) == 1:
+        labels = labels * 2
 
     # Check scroll_dim
     if scroll_dim > len(volume[0].shape):
@@ -117,6 +123,6 @@ def scroll_mask(volume: np.ndarray, mask: np.ndarray, alpha: Union[int, float, n
     ncols = 1
     fig, ax = plt.subplots(nrows, ncols)
     tracker = SASS(alpha=alpha, ax=ax, cmap=cmap, fig=fig, flag_mask=True, scroll_dim=scroll_dim,
-                   volumes=(volume, mask))
+                   volumes=(volume, mask), labels=labels)
     fig.canvas.mpl_connect('scroll_event', tracker.onscroll)
     plt.show()
